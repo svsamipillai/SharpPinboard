@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<posts dt="2005-11-28" tag="webdev" user="user">
+  <post href="http://www.howtocreate.co.uk/tutorials/texterise.php?dom=1"
+  description="JavaScript DOM reference"
+  extended="dom reference"
+  hash="c0238dc0c44f07daedd9a1fd9bbdeebd"
+  meta="92959a96fd69146c5fe7cbde6e5720f2"
+        others="55" tag="dom javascript webdev" time="2005-11-28T05:26:09Z" />
+  <post href="http://www.pinboard.in/"
+  hash="2f9704c729e7ed3b41647b7d0ad649fe"
+  description="Pinboard"
+  extended="antisocial bookmarking"
+  tag="bookmarks tools" time="2007-12-11T00:00:07Z" others="433" />
+</posts>
