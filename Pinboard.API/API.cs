@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml;
 using RestSharp;
 using Pinboard.Types;
 using System.Net;
 using Pinboard.Helpers;
-using System.Web.Script.Serialization;
-using ServiceStack.Text;
+using System.Xml.Serialization;
 using System.IO;
+
 
 namespace Pinboard
 {
@@ -17,17 +18,23 @@ namespace Pinboard
         private const string APIBaseURL = "https://api.pinboard.in/v1/";
         private readonly string token = null;
         private readonly string url = null;
-
+        private bool IsDelicious = false;
+        private readonly string username = null;
         /// <summary>
         /// Instantiates a new Pinboard API client 
         /// </summary>
         /// <param name="Username">The username used to connect to Pinboard</param>
         /// <param name="Token">API token, found on https://pinboard.in/settings/password </param>
         /// <param name="APIBaseURL">Base URL to use (defaults to Pinboard)</param>
-        public API(string Token, string APIBaseURL = APIBaseURL)
+        public API(string Token, string APIBaseURL = APIBaseURL, string Username = null)
         {
             this.token = Token;
             this.url = APIBaseURL;
+            if (!string.IsNullOrEmpty(Username))
+            {
+                IsDelicious = true; //should we check this a different way?
+                this.username = Username;
+            }
         }
 
         /// <summary>
@@ -47,14 +54,14 @@ namespace Pinboard
         public PinboardResponse AddPost(Post newPost)
         {
             RestRequest AddPostRequest = new RestRequest("/posts/add");
-            if (newPost.URL != null)
-                AddPostRequest.AddParameter("url", newPost.URL);
+            if (newPost.Href != null)
+                AddPostRequest.AddParameter("url", newPost.Href);
             if (newPost.Description != null)
                 AddPostRequest.AddParameter("description", newPost.Description);
             if (newPost.Extended != null)
                 AddPostRequest.AddParameter("extended", newPost.Extended);
-            if (newPost.Tags != null)
-                AddPostRequest.AddParameter(ParameterHelpers.ValueToGetArgument("tags", newPost.Tags));
+            if (newPost.Tag != null)
+                AddPostRequest.AddParameter(ParameterHelpers.ValueToGetArgument("tags", newPost.Tag));
             if (newPost.CreationTime.HasValue)
                 AddPostRequest.AddParameter(ParameterHelpers.ValueToGetArgument("dt", newPost.CreationTime));
             if (newPost.Replace != null)
@@ -88,7 +95,7 @@ namespace Pinboard
         /// <returns>A Pinboard response - normally with a Code of "done"</returns>
         public PinboardResponse DeletePost(Post deletePost)
         {
-            return DeletePost(deletePost.URL);
+            return DeletePost(deletePost.Href);
         }
 
         /// <summary>
@@ -186,27 +193,34 @@ namespace Pinboard
         public T Execute<T>(RestRequest request) where T : new()
         {
             RestClient client = new RestClient();
-           //client.AddHandler("text/plain", new RestSharp.Deserializers.JsonDeserializer());
-
-            client.UserAgent = "SharpPinboard 0.01, voltagex@voltagex.org";
+     
+            client.UserAgent = "SharpPinboard 0.02, voltagex@voltagex.org";
             client.BaseUrl = this.url;
-            client.Authenticator = new TokenAuthenticator(this.token);
-            client.AddDefaultParameter("Accept", "text/json", ParameterType.HttpHeader);
-            client.AddDefaultParameter("format", "json");
+
+            if (!IsDelicious)
+            {
+                client.Authenticator = new TokenAuthenticator(this.token);
+            }
+            else
+            {
+                client.Authenticator = new HttpBasicAuthenticator(username,token);
+            }
             
-            IRestResponse response = client.Execute(request);
+            IRestResponse<T> response = client.Execute<T>(request);
+            
+            var serializer = new XmlSerializer(typeof(T));
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                throw new ApplicationException(response.StatusDescription,response.ErrorException);
+            }
 
-           if (response.StatusCode != HttpStatusCode.OK)
-                throw new Exception(response.StatusDescription);
-            ServiceStack.Text.JsonSerializer<T> serializer = new ServiceStack.Text.JsonSerializer<T>();
+            return response.Data;
+        }
+         
+       
 
-#if DEBUG
-           
-            JsonSerializer<string> responseSerializer = new JsonSerializer<string>(); 
-            responseSerializer.SerializeToWriter(response.Content, new StreamWriter("Debug.json"));
-#endif
 
-            return serializer.DeserializeFromString(response.Content);
+
         }
     }
-}
+
