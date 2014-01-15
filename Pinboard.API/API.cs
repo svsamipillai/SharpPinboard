@@ -14,16 +14,20 @@ namespace Pinboard
 {
     public class API
     {
-        private string APIBaseURL = "https://api.pinboard.in/v1/";
+        private const string APIBaseURL = "https://api.pinboard.in/v1/";
         private readonly string token = null;
+        private readonly string url = null;
+
         /// <summary>
         /// Instantiates a new Pinboard API client 
         /// </summary>
         /// <param name="Username">The username used to connect to Pinboard</param>
         /// <param name="Token">API token, found on https://pinboard.in/settings/password </param>
-        public API(string Token)
+        /// <param name="APIBaseURL">Base URL to use (defaults to Pinboard)</param>
+        public API(string Token, string APIBaseURL = APIBaseURL)
         {
             this.token = Token;
+            this.url = APIBaseURL;
         }
 
         /// <summary>
@@ -185,7 +189,7 @@ namespace Pinboard
            //client.AddHandler("text/plain", new RestSharp.Deserializers.JsonDeserializer());
 
             client.UserAgent = "SharpPinboard 0.01, voltagex@voltagex.org";
-            client.BaseUrl = this.APIBaseURL;
+            client.BaseUrl = this.url;
             client.Authenticator = new TokenAuthenticator(this.token);
             client.AddDefaultParameter("Accept", "text/json", ParameterType.HttpHeader);
             client.AddDefaultParameter("format", "json");
