@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml;
 using RestSharp;
 using Pinboard.Types;
 using System.Net;
 using Pinboard.Helpers;
-using System.Xml.Serialization;
-using System.IO;
 
 
 namespace Pinboard
@@ -16,34 +11,47 @@ namespace Pinboard
     public class API
     {
         private const string APIBaseURL = "https://api.pinboard.in/v1/";
-        private readonly string token = null;
-        private readonly string url = null;
-        private bool IsDelicious = false;
-        private readonly string username = null;
+        private static RestClient client;
+        private readonly string token;
+        private readonly string url;
+        private readonly string username;
         /// <summary>
         /// Instantiates a new Pinboard API client 
         /// </summary>
         /// <param name="Username">The username used to connect to Pinboard</param>
         /// <param name="Token">API token, found on https://pinboard.in/settings/password </param>
         /// <param name="APIBaseURL">Base URL to use (defaults to Pinboard)</param>
-        public API(string Token, string APIBaseURL = APIBaseURL, string Username = null)
+        public API(string Token, string APIBaseURL = APIBaseURL, string Username = null, RestClient apiClient = null)
         {
-            this.token = Token;
-            this.url = APIBaseURL;
+            if (apiClient == null)
+            {
+                client = new RestClient(APIBaseURL);
+            }
+
+            else
+            {
+                client = apiClient;
+            }
+
+            token = Token;
+            url = APIBaseURL;
+
             if (!string.IsNullOrEmpty(Username))
             {
-                IsDelicious = true; //should we check this a different way?
-                this.username = Username;
+                username = Username;
             }
         }
 
         /// <summary>
-        /// Gets posts/update, returns the most recent time a bookmark was added, updated or deleted.
+        /// Returns the most recent time a bookmark was added, updated or deleted.
+        /// Use this before calling posts/all to see if the data has changed since the last fetch.
+        /// <see cref="https://pinboard.in/api/#posts_update"/>
         /// </summary>
-        public DateTime LastUpdated()
+        /// <returns>UpdateResponse with Time property set to last update time</returns>
+        public UpdateResponse GetLastUpdate()
         {
-            RestRequest LastUpdatedRequest = new RestRequest("/posts/update");
-            return Execute<UpdateResponse>(LastUpdatedRequest).Time;
+            RestRequest getUpdateRequest = new RestRequest("/posts/update");
+            return Execute<UpdateResponse>(getUpdateRequest);
         }
 
         /// <summary>
@@ -106,10 +114,9 @@ namespace Pinboard
         /// <param name="URL">Return the post with this URL</param>
         /// <param name="ChangedMeta">Include the "meta" attribute in the response</param>
         /// <returns>A list of Post objects</returns>
-        public List<Post> GetPosts(Tags Tags = null, DateTime? CreatedDate = null, string URL = null, bool ChangedMeta = false)
+        public List<Post> GetPosts(List<Tag> Tags = null, DateTime? CreatedDate = null, string URL = null, bool ChangedMeta = false)
         {
             RestRequest GetPostsReq = new RestRequest("/posts/get");
-            GetPostsReq.RequestFormat = DataFormat.Json;
 
             if (Tags != null)
                 GetPostsReq.AddParameter(ParameterHelpers.ValueToGetArgument("tags", Tags));
@@ -122,6 +129,39 @@ namespace Pinboard
         }
 
         /// <summary>
+        /// Gets most recent posts
+        /// </summary>
+        /// <param name="Tags">Filter by up to three tags</param>
+        /// <param name="Count">Number of posts to return - default 15</param>
+        /// <returns>A list of Posts</returns>
+        public List<Post> GetRecentPosts(List<Tag> Tags = null, int Count = 15)
+        {
+            RestRequest getPostsReq = new RestRequest("/posts/recent");
+            getPostsReq.RequestFormat = DataFormat.Json;
+
+            if (Tags != null)
+                getPostsReq.AddParameter("tag", Tags.ToString());
+            getPostsReq.AddParameter("count", Count);
+
+            return Execute<List<Post>>(getPostsReq);
+        }
+
+        /// <summary>
+        /// Gets number of posts by date
+        /// </summary>
+        /// <param name="Tags">Filter by up to three tags</param>
+        /// <returns></returns>
+        public List<DateResponse> GetPostDates(List<Tag> Tags = null)
+        {
+            RestRequest getDatesReq = new RestRequest("/posts/dates");
+
+            if (Tags != null)
+                getDatesReq.AddParameter("tag", Tags);
+
+            return Execute<List<DateResponse>>(getDatesReq);
+        }
+
+        /// <summary>
         /// Get all posts. This is rate-limited to once every 60 seconds and will return a 429 error if you exceed that
         /// </summary>
         /// <param name="Tags"></param>
@@ -131,96 +171,98 @@ namespace Pinboard
         /// <param name="ToDate">Return only bookmarks created before this time</param>
         /// <param name="ChangedMeta">Include the "meta" attribute in the response</param>
         /// <returns>A list of Posts</returns>
-        public List<Post> GetAllPosts(Tags Tags = null, int? Start = null, int? Results = null, DateTime? FromDate = null, DateTime? ToDate = null, bool ChangedMeta = false)
+        public List<Post> GetAllPosts(List<Tag> Tags = null, int? Start = null, int? Results = null, DateTime? FromDate = null, DateTime? ToDate = null, bool ChangedMeta = false)
         {
-            RestRequest GetPostsReq = new RestRequest("/posts/all");
-            GetPostsReq.RequestFormat = DataFormat.Json;
+            RestRequest getPostsReq = new RestRequest("/posts/all");
+            getPostsReq.RequestFormat = DataFormat.Json;
 
             if (Tags != null)
-                GetPostsReq.AddParameter("tag",Tags.ToString());
+                getPostsReq.AddParameter(ParameterHelpers.ValueToGetArgument("tag", Tags));
             if (Start.HasValue)
-                GetPostsReq.AddParameter("start",Start);
+                getPostsReq.AddParameter("start", Start);
             if (Results.HasValue)
-                GetPostsReq.AddParameter("results",Results);
+                getPostsReq.AddParameter("results", Results);
             if (FromDate.HasValue)
-                GetPostsReq.AddParameter("fromdt",FromDate);
+                getPostsReq.AddParameter("fromdt", FromDate);
             if (ToDate.HasValue)
-                GetPostsReq.AddParameter("todt",ToDate);
-            
-            return Execute<List<Post>>(GetPostsReq);
+                getPostsReq.AddParameter("todt", ToDate);
+
+            return Execute<List<Post>>(getPostsReq);
+        }
+
+        public SuggestedTagsResponse GetSuggestedTags(string url)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
-        /// Gets most recent posts
+        /// Returns a full list of the user's tags along with the number of times they were used.
         /// </summary>
-        /// <param name="Tags">Filter by up to three tags</param>
-        /// <param name="Count">Number of posts to return - default 15</param>
-        /// <returns>A list of Posts</returns>
-        public List<Post> GetRecentPosts(Tags Tags = null, int Count = 15)
+        /// <returns>A list of Tag, <seealso cref="Tag" />/></returns>
+        public List<Tag> GetTags()
         {
-            RestRequest GetPostsReq = new RestRequest("/posts/recent");
-            GetPostsReq.RequestFormat = DataFormat.Json;
-
-            if (Tags != null)
-                GetPostsReq.AddParameter("tag", Tags.ToString());
-            GetPostsReq.AddParameter("count", Count);
-
-            return Execute<List<Post>>(GetPostsReq);
+            RestRequest getTagsRequest = new RestRequest("/tags/get");
+            return Execute<List<Tag>>(getTagsRequest);
         }
 
-        /// <summary>
-        /// Gets number of posts by date
-        /// </summary>
-        /// <param name="Tags">Filter by up to three tags</param>
-        /// <returns></returns>
-        public List<DateResponse> GetPostDates(Tags Tags = null)
+        public PinboardResponse DeleteTag()
         {
-            RestRequest GetDatesReq = new RestRequest("/posts/dates");
-            GetDatesReq.RequestFormat = DataFormat.Json;
-
-            if (Tags != null)
-                GetDatesReq.AddParameter("tag", Tags.ToString());
-            
-            return Execute<List<DateResponse>>(GetDatesReq);
+            throw new NotImplementedException();
         }
+
+        public PinboardResponse RenameTag(string oldTag, string newTag)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string GetSecretKey()
+        {
+            //return PinboardResponse.Result
+            throw new NotImplementedException();
+        }
+
+        public string GetAPIToken()
+        {
+            //return PinboardResponse.Result
+            throw new NotImplementedException();
+        }
+
+
 
         /// <summary>
         /// Execute RestRequest, as suggested in the RestSharp documentation
         /// </summary>
         /// <typeparam name="T">Type to return</typeparam>
         /// <param name="request">RestRequest</param>
-        /// <returns></returns>
-        public T Execute<T>(RestRequest request) where T : new()
+        /// <returns>Response object of type T</returns>
+        private T Execute<T>(RestRequest request) where T : new()
         {
-            RestClient client = new RestClient();
-     
-            client.UserAgent = "SharpPinboard 0.02, voltagex@voltagex.org";
-            client.BaseUrl = this.url;
-
-            if (!IsDelicious)
+            if (client == null)
             {
-                client.Authenticator = new TokenAuthenticator(this.token);
+                throw new NullReferenceException("Client didn't instantiate a RestClient");
+            }
+
+            client.UserAgent = "SharpPinboard 0.03, voltagex@voltagex.org";
+            client.BaseUrl = url;
+
+            if (APIBaseURL.Contains("pinboard")) //should this be done differently?
+            {
+                client.Authenticator = new TokenAuthenticator(token);
             }
             else
             {
-                client.Authenticator = new HttpBasicAuthenticator(username,token);
+                client.Authenticator = new HttpBasicAuthenticator(username, token);
             }
-            
+
             IRestResponse<T> response = client.Execute<T>(request);
-            
-            var serializer = new XmlSerializer(typeof(T));
-            if (response.StatusCode != HttpStatusCode.OK)
+
+            if (response.StatusCode != HttpStatusCode.OK || response.ErrorException != null)
             {
-                throw new ApplicationException(response.StatusDescription,response.ErrorException);
+                throw new ApplicationException(response.StatusDescription != "OK" ? response.StatusDescription : response.ErrorMessage, response.ErrorException);
             }
 
             return response.Data;
         }
-         
-       
-
-
-
-        }
     }
+}
 

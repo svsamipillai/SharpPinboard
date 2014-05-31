@@ -1,30 +1,68 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Text;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
+using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using RestSharp;
 using Pinboard.Types;
-using System.IO;
-using System.Reflection;
+using RestSharp;
+using Moq;
 using RestSharp.Deserializers;
+using Pinboard.Helpers;
 
 namespace Pinboard.Tests
 {
     [TestClass]
     public class Tests
     {
-        [TestMethod] 
-        public void DeserializePosts()
+        [TestMethod]
+        [ExpectedException(typeof(ApplicationException))]
+        public void Test403()
         {
-            string testpath = new System.IO.DirectoryInfo(Assembly.GetExecutingAssembly().Location).Parent.FullName;
-            string content = new StreamReader(testpath + "\\data\\delicious.xml").ReadToEnd();
-            XmlDeserializer ds = new XmlDeserializer();
-            var posts = ds.Deserialize<List<Post>>(new RestResponse() {Content = content});
-            Debug.Write("something");
+            var client = new Mock<RestClient>();
+            client.Setup(x => x.Execute<List<Post>>(It.IsAny<IRestRequest>()))
+                .Returns(new RestResponse<List<Post>> { StatusCode = HttpStatusCode.Unauthorized });
+            Pinboard.API api = new API("", "", "", client.Object);
+            api.GetAllPosts();
+        }
 
+        [TestMethod]
+        public void TestTagDeserialization()
+        {
+            var client = new Mock<RestClient>();
+            string tags = @"<?xml version=""1.0"" encoding=""UTF-8"" ?>
+                <tags>
+	                <tag count=""1"" tag="""" />
+	                <tag count=""5"" tag="".net"" />
+	                <tag count=""2"" tag=""accessibility"" />
+	                <tag count=""1"" tag=""acer"" />
+	                <tag count=""2"" tag=""ai"" />
+	                <tag count=""11"" tag=""android"" />
+                </tags>";
+            client.Setup(
+                x => x.Execute<List<Tag>>(It.IsAny<IRestRequest>()))
+                      .Returns(new RestResponse<List<Tag>> { StatusCode = HttpStatusCode.OK, Content = tags, ContentType = "text/xml" }
+                      );
+            var response = client.Object.Execute<List<Tag>>(new RestRequest());
+            XmlDeserializer s = new XmlDeserializer();
+            var data = s.Deserialize<List<Tag>>(response);
+            Assert.IsTrue(data.Count == 6);
+            Assert.IsTrue(data[2].tag == "accessibility");
+            Assert.IsTrue(data[2].Count == 2);
+        }
 
+        [TestMethod]
+        public void TestValueToGet()
+        {
+            //var stringParam = ParameterHelpers.ValueToGetArgument("string", "string");
+            var boolParam = ParameterHelpers.ValueToGetArgument("didThisWork", true);
+            var dateTimeParam = ParameterHelpers.ValueToGetArgument("letsParty", new DateTime(1999, 12, 31));
+            var tags = new List<Tag>();
+            tags.Add(new Tag("something"));
+            tags.Add(new Tag("else"));
+            var tagParam = ParameterHelpers.ValueToGetArgument("tags", tags);
+            Assert.AreEqual(boolParam.ToString(), "didThisWork=yes");
+            Assert.AreEqual(dateTimeParam.ToString(), "letsParty=1999-12-31T00:00:00Z");
+            Assert.AreEqual(tagParam.ToString(),"tags=something else");
         }
     }
 }

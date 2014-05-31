@@ -7,7 +7,7 @@ namespace Pinboard.Types
 {
     public class SuggestedTagsResponse
     {
-        public Tags Popular { get; set; }
-        public Tags Recommended { get; set; }
+        public List<Tag> Popular { get; set; }
+        public List<Tag> Recommended { get; set; }
     }
 }

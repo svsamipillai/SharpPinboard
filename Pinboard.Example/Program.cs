@@ -12,15 +12,17 @@ namespace Pinboard.Example
 {
     internal class Program
     {
+        private static API client;
         private static void Main(string[] args)
         {
-            API client;
+
             string token = ConfigurationManager.AppSettings["token"];
             
             if (string.IsNullOrEmpty(token) || token == "YOUR_API_KEY_HERE")
             {
                 UpdateSettings();
             }
+
             token = ConfigurationManager.AppSettings["token"];
             string url = ConfigurationManager.AppSettings["APIBaseURL"];
             string username = ConfigurationManager.AppSettings["Username"];
@@ -29,16 +31,59 @@ namespace Pinboard.Example
             { 
                 client = new API(ConfigurationManager.AppSettings["token"]);
             }
+
             else
             {
                 client = new API(token,url,username);
             }
 
-      
-            var posts = client.GetAllPosts(new Tags("rss-feed"));
+
+            SelectExample();
+            Console.ReadLine();
+        }
+
+        private static void SelectExample()
+        {
+            Console.WriteLine(Environment.NewLine + "Try which example?");
+            Console.WriteLine("1: Get all rss feeds (default)");
+            Console.WriteLine("2: Get all tags");
+            Console.WriteLine("3: Get last updated date");
+            Console.WriteLine("Your selection: ");
+            string selection = Console.ReadLine();
+            switch (selection)
+            {
+                case "1":
+                    GetAllPosts();
+                    break;
+                case "2":
+                    GetAllTags();
+                    break;
+                case "3":
+                    GetLastUpdate();
+                    break;
+                default:
+                    GetAllPosts();
+                    break;
+            }
+
+        }
+
+        private static void GetAllTags()
+        {
+            var tags = client.GetTags();
+            tags.PrintDump();
+        }
+
+        private static void GetAllPosts()
+        {
+            var posts = client.GetAllPosts(new List<Tag>() { new Tag("rss-feed") });
             var urls = posts.Select(post => post.Href).Aggregate((a, b) => a + Environment.NewLine + b);
             urls.PrintDump();
-            Console.ReadLine();
+        }
+
+        private static void GetLastUpdate()
+        {
+            var result = client.GetLastUpdate();
         }
 
         private static void UpdateSettings(ConfigurationUserLevel configurationLevel = ConfigurationUserLevel.None)

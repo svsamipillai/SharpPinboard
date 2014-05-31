@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using RestSharp.Contrib;
 using RestSharp;
@@ -33,9 +34,9 @@ namespace Pinboard.Helpers
                 parameter.Value = ((DateTime)value).ToString("s") + "Z"; //as per http://stackoverflow.com/questions/1728404/date-format-yyyy-mm-ddthhmmssz
             }
 
-            else if (value.GetType() == typeof(Tags))
+            else if (value.GetType() == typeof(List<Tag>))
             {
-                parameter.Value = value.ToString();
+                parameter.Value = string.Join(" ",((List<Tag>)value).Select(x=>x.tag)); //Hopefully keep this compatible with older .NET 
             }
 
             else
