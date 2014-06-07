@@ -227,8 +227,6 @@ namespace Pinboard
             throw new NotImplementedException();
         }
 
-
-
         /// <summary>
         /// Execute RestRequest, as suggested in the RestSharp documentation
         /// </summary>
@@ -242,7 +240,7 @@ namespace Pinboard
                 throw new NullReferenceException("Client didn't instantiate a RestClient");
             }
 
-            client.UserAgent = "SharpPinboard 0.03, voltagex@voltagex.org";
+            client.UserAgent = "SharpPinboard 0.04, voltagex@voltagex.org";
             client.BaseUrl = url;
 
             if (APIBaseURL.Contains("pinboard")) //should this be done differently?

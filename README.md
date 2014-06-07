@@ -1,7 +1,17 @@
-SharpPinboard
-=============
+# SharpPinboard
 
 Pinboard API client in C#
 
-Development is halted pending the next revision of the Pinboard API. 
-If anyone stumbles across this and *really* needs something to work, add an Issue.
+This should work for del.icio.us but hasn't been tested much for that.
+
+## Todo:
+
+* GetSuggestedTags
+
+* DeleteTag
+
+* RenameTag
+
+* GetSecretKey
+
+* GetAPIToken
