@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
-using System.Linq;
-using System.Security;
+using System.Reflection;
 using System.Text;
 using System.Configuration;
-using Pinboard.Types;
 using ServiceStack.Text;
 
 namespace Pinboard.Example
@@ -17,7 +14,7 @@ namespace Pinboard.Example
         {
 
             string token = ConfigurationManager.AppSettings["token"];
-            
+
             if (string.IsNullOrEmpty(token) || token == "YOUR_API_KEY_HERE")
             {
                 UpdateSettings();
@@ -28,13 +25,13 @@ namespace Pinboard.Example
             string username = ConfigurationManager.AppSettings["Username"];
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(url))
-            { 
+            {
                 client = new API(ConfigurationManager.AppSettings["token"]);
             }
 
             else
             {
-                client = new API(token,url,username);
+                client = new API(token, url, username);
             }
 
 
@@ -44,46 +41,61 @@ namespace Pinboard.Example
 
         private static void SelectExample()
         {
-            Console.WriteLine(Environment.NewLine + "Try which example?");
-            Console.WriteLine("1: Get all rss feeds (default)");
-            Console.WriteLine("2: Get all tags");
-            Console.WriteLine("3: Get last updated date");
-            Console.WriteLine("Your selection: ");
-            string selection = Console.ReadLine();
-            switch (selection)
+            GetPinboardMethods();
+        }
+
+        private static void GetPinboardMethods()
+        {
+            var api = Assembly.GetAssembly(typeof(API));
+            var mainType = api.GetType("Pinboard.API");
+            var methods = mainType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+
+            for (int i = 0; i < methods.Length; i++)
             {
-                case "1":
-                    GetAllPosts();
-                    break;
-                case "2":
-                    GetAllTags();
-                    break;
-                case "3":
-                    GetLastUpdate();
-                    break;
-                default:
-                    GetAllPosts();
-                    break;
+                Console.WriteLine(i + ":" + methods[i].Name + " " + PrintParameters(methods[i].GetParameters()));
+            }
+
+            try
+            {
+                Console.WriteLine("Choose a method to run (or a number not listed here to exit): ");
+                string selection = Console.ReadLine();
+                int methodNumber = int.Parse(selection.Trim());
+                if (methodNumber > methods.Length + 1 || methodNumber < 0)
+                {
+                    Environment.Exit(1);
+                }
+                List<object> parameterArray = new List<object>();
+                foreach (ParameterInfo methodParam in methods[methodNumber].GetParameters())
+                {
+                    Console.Write("Set the value of {0} (optional: {1}): ", methodParam.Name, methodParam.IsOptional);
+                    var paramValue = Console.ReadLine().Trim();
+
+                    parameterArray.Add(paramValue);
+                }
+
+                var response = methods[methodNumber].Invoke(client, parameterArray.ToArray());
+                response.PrintDump();
+            }
+
+
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine("Press any key to exit");
+                Console.ReadKey();
             }
 
         }
 
-        private static void GetAllTags()
+        private static string PrintParameters(ParameterInfo[] parameterInfo)
         {
-            var tags = client.GetTags();
-            tags.PrintDump();
-        }
-
-        private static void GetAllPosts()
-        {
-            var posts = client.GetAllPosts(new List<Tag>() { new Tag("rss-feed") });
-            var urls = posts.Select(post => post.Href).Aggregate((a, b) => a + Environment.NewLine + b);
-            urls.PrintDump();
-        }
-
-        private static void GetLastUpdate()
-        {
-            var result = client.GetLastUpdate();
+            StringBuilder builder = new StringBuilder("(");
+            foreach (var info in parameterInfo)
+            {
+                builder.Append(info.Name + ",");
+            }
+            builder.Append(")");
+            return builder.ToString();
         }
 
         private static void UpdateSettings(ConfigurationUserLevel configurationLevel = ConfigurationUserLevel.None)
@@ -97,7 +109,7 @@ namespace Pinboard.Example
             Console.WriteLine("1: Pinboard (default)");
             Console.WriteLine("2: Delicious");
             Console.WriteLine("Your selection: ");
-            
+
             string selection = Console.ReadLine();
             switch (selection)
             {
@@ -121,8 +133,8 @@ namespace Pinboard.Example
 
             string passwordMessage = "Please enter your " + (needsUsername ? "password" : "token") + ":";
             Console.WriteLine(passwordMessage);
-            config.AppSettings.Settings.Add("token",GetPassword());
-            
+            config.AppSettings.Settings.Add("token", GetPassword());
+
             config.Save(ConfigurationSaveMode.Full);
         }
 
@@ -142,11 +154,11 @@ namespace Pinboard.Example
                 {
                     if (key.Key == ConsoleKey.Backspace && password.Length > 0)
                     {
-                        password.Remove(password.Length - 1,1);
+                        password.Remove(password.Length - 1, 1);
                         Console.Write("\b \b");
                     }
                 }
-            } 
+            }
             while (key.Key != ConsoleKey.Enter);
             return password.ToString();
         }
