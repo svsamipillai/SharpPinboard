@@ -8,6 +8,7 @@ using RestSharp;
 using Moq;
 using RestSharp.Deserializers;
 using Pinboard.Helpers;
+using Pinboard.BookmarkFile;
 
 namespace Pinboard.Tests
 {
@@ -63,6 +64,14 @@ namespace Pinboard.Tests
             Assert.AreEqual(boolParam.ToString(), "didThisWork=yes");
             Assert.AreEqual(dateTimeParam.ToString(), "letsParty=1999-12-31T00:00:00Z");
             Assert.AreEqual(tagParam.ToString(),"tags=something else");
+        }
+
+
+        [TestMethod]
+        public void TestReadFromFile()
+        {
+            var reader = new Reader(@"C:\Userdata\Downloads\delicious.html");
+            var tags = reader.GetTags();
         }
     }
 }
