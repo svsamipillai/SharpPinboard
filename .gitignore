@@ -64,3 +64,6 @@ packages/
 *.vsmdi
 Pinboard.Example/App.config
 Pinboard.Example/App.config
+
+#Vanquish nuget.exe
+.nuget/nuget.exe
