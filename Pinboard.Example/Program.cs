@@ -34,14 +34,9 @@ namespace Pinboard.Example
                 client = new API(token, url, username);
             }
 
-
-            SelectExample();
-            Console.ReadLine();
-        }
-
-        private static void SelectExample()
-        {
+            Console.WriteLine();
             GetPinboardMethods();
+            Console.ReadLine();
         }
 
         private static void GetPinboardMethods()
@@ -73,8 +68,16 @@ namespace Pinboard.Example
                     parameterArray.Add(paramValue);
                 }
 
-                var response = methods[methodNumber].Invoke(client, parameterArray.ToArray());
-                response.PrintDump();
+                try
+                {
+                    var response = methods[methodNumber].Invoke(client, parameterArray.ToArray());
+                    response.PrintDump();
+                }
+                catch (TargetInvocationException e)
+                {
+                    Console.WriteLine(e.InnerException.Message);
+                }
+
             }
 
 
