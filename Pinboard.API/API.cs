@@ -4,6 +4,7 @@ using RestSharp;
 using Pinboard.Types;
 using System.Net;
 using Pinboard.Helpers;
+using System.Threading.Tasks;
 
 
 namespace Pinboard
@@ -48,10 +49,11 @@ namespace Pinboard
         /// <see cref="https://pinboard.in/api/#posts_update"/>
         /// </summary>
         /// <returns>UpdateResponse with Time property set to last update time</returns>
-        public UpdateResponse GetLastUpdate()
+        public async Task<IRestResponse<UpdateResponse>> GetLastUpdateAsync()
         {
             RestRequest getUpdateRequest = new RestRequest("/posts/update");
-            return Execute<UpdateResponse>(getUpdateRequest);
+            return await ExecuteAsync<UpdateResponse>(getUpdateRequest);
+           
         }
 
         /// <summary>
@@ -59,7 +61,7 @@ namespace Pinboard
         /// </summary>
         /// <param name="newPost">The post to add</param>
         /// <returns>PinboardResponse</returns>
-        public PinboardResponse AddPost(Post newPost)
+        public async Task<IRestResponse<PinboardResponse>> AddPostAsync(Post newPost)
         {
             RestRequest AddPostRequest = new RestRequest("/posts/add");
             if (newPost.Href != null)
@@ -79,8 +81,7 @@ namespace Pinboard
             if (newPost.ToRead != null)
                 AddPostRequest.AddParameter(ParameterHelpers.ValueToGetArgument("toread", newPost.ToRead));
 
-            var response = Execute<PinboardResponse>(AddPostRequest);
-            return response;
+            return await ExecuteAsync<PinboardResponse>(AddPostRequest);
         }
 
         /// <summary>
@@ -88,11 +89,11 @@ namespace Pinboard
         /// </summary>
         /// <param name="URL">URL we want to match</param>
         /// <returns>PinboardResponse</returns>
-        public PinboardResponse DeletePost(string URL)
+        public async Task<IRestResponse<PinboardResponse>> DeletePost(string URL)
         {
             RestRequest DeletePostRequest = new RestRequest("/posts/delete");
             DeletePostRequest.AddParameter("url", URL);
-            return Execute<PinboardResponse>(DeletePostRequest);
+            return await ExecuteAsync<PinboardResponse>(DeletePostRequest);
 
         }
 
@@ -101,9 +102,9 @@ namespace Pinboard
         /// </summary>
         /// <param name="deletePost">Post object with URL parameter</param>
         /// <returns>A Pinboard response - normally with a Code of "done"</returns>
-        public PinboardResponse DeletePost(Post deletePost)
+        public async Task<IRestResponse<PinboardResponse>> DeletePostAsync(Post deletePost)
         {
-            return DeletePost(deletePost.Href);
+            return await DeletePost(deletePost.Href);
         }
 
         /// <summary>
@@ -114,7 +115,7 @@ namespace Pinboard
         /// <param name="URL">Return the post with this URL</param>
         /// <param name="ChangedMeta">Include the "meta" attribute in the response</param>
         /// <returns>A list of Post objects</returns>
-        public List<Post> GetPosts(List<Tag> Tags = null, DateTime? CreatedDate = null, string URL = null, bool ChangedMeta = false)
+        public async Task<IRestResponse<List<Post>>> GetPostsAsync(List<Tag> Tags = null, DateTime? CreatedDate = null, string URL = null, bool ChangedMeta = false)
         {
             RestRequest GetPostsReq = new RestRequest("/posts/get");
 
@@ -125,7 +126,7 @@ namespace Pinboard
             if (URL != null)
                 GetPostsReq.AddParameter("url", URL);
             GetPostsReq.AddParameter(ParameterHelpers.ValueToGetArgument("meta", ChangedMeta));
-            return Execute<List<Post>>(GetPostsReq);
+            return await ExecuteAsync<List<Post>>(GetPostsReq);
         }
 
         /// <summary>
@@ -134,7 +135,7 @@ namespace Pinboard
         /// <param name="Tags">Filter by up to three tags</param>
         /// <param name="Count">Number of posts to return - default 15</param>
         /// <returns>A list of Posts</returns>
-        public List<Post> GetRecentPosts(List<Tag> Tags = null, int Count = 15)
+        public async Task<IRestResponse<List<Post>>> GetRecentPostsAsync(List<Tag> Tags = null, int Count = 15)
         {
             RestRequest getPostsReq = new RestRequest("/posts/recent");
             getPostsReq.RequestFormat = DataFormat.Json;
@@ -143,7 +144,7 @@ namespace Pinboard
                 getPostsReq.AddParameter("tag", Tags.ToString());
             getPostsReq.AddParameter("count", Count);
 
-            return Execute<List<Post>>(getPostsReq);
+            return await ExecuteAsync<List<Post>>(getPostsReq);
         }
 
         /// <summary>
@@ -151,14 +152,14 @@ namespace Pinboard
         /// </summary>
         /// <param name="Tags">Filter by up to three tags</param>
         /// <returns></returns>
-        public List<DateResponse> GetPostDates(List<Tag> Tags = null)
+        public async Task<IRestResponse<List<DateResponse>>> GetPostDatesAsync(List<Tag> Tags = null)
         {
             RestRequest getDatesReq = new RestRequest("/posts/dates");
 
             if (Tags != null)
                 getDatesReq.AddParameter("tag", Tags);
 
-            return Execute<List<DateResponse>>(getDatesReq);
+            return await ExecuteAsync<List<DateResponse>>(getDatesReq);
         }
 
         /// <summary>
@@ -171,7 +172,7 @@ namespace Pinboard
         /// <param name="ToDate">Return only bookmarks created before this time</param>
         /// <param name="ChangedMeta">Include the "meta" attribute in the response</param>
         /// <returns>A list of Posts</returns>
-        public List<Post> GetAllPosts(List<Tag> Tags = null, int? Start = null, int? Results = null, DateTime? FromDate = null, DateTime? ToDate = null, bool ChangedMeta = false)
+        public async Task<IRestResponse<List<Post>>> GetAllPostsAsync(List<Tag> Tags = null, int? Start = null, int? Results = null, DateTime? FromDate = null, DateTime? ToDate = null, bool ChangedMeta = false)
         {
             RestRequest getPostsReq = new RestRequest("/posts/all");
             getPostsReq.RequestFormat = DataFormat.Json;
@@ -187,10 +188,10 @@ namespace Pinboard
             if (ToDate.HasValue)
                 getPostsReq.AddParameter("todt", ToDate);
 
-            return Execute<List<Post>>(getPostsReq);
+            return await ExecuteAsync<List<Post>>(getPostsReq);
         }
 
-        public SuggestedTagsResponse GetSuggestedTags(string url)
+        public async Task<SuggestedTagsResponse> GetSuggestedTagsAsync(string url)
         {
             throw new NotImplementedException();
         }
@@ -199,33 +200,33 @@ namespace Pinboard
         /// Returns a full list of the user's tags along with the number of times they were used.
         /// </summary>
         /// <returns>A list of Tag, <seealso cref="Tag" />/></returns>
-        public List<Tag> GetTags()
+        public async Task<IRestResponse<List<Tag>>> GetTags()
         {
             RestRequest getTagsRequest = new RestRequest("/tags/get");
-            return Execute<List<Tag>>(getTagsRequest);
+            return await ExecuteAsync<List<Tag>>(getTagsRequest);
         }
 
-        public PinboardResponse DeleteTag()
-        {
-            throw new NotImplementedException();
-        }
+        //public PinboardResponse DeleteTag()
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public PinboardResponse RenameTag(string oldTag, string newTag)
-        {
-            throw new NotImplementedException();
-        }
+        //public PinboardResponse RenameTag(string oldTag, string newTag)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public string GetSecretKey()
-        {
-            //return PinboardResponse.Result
-            throw new NotImplementedException();
-        }
+        //public string GetSecretKey()
+        //{
+        //    //return PinboardResponse.Result
+        //    throw new NotImplementedException();
+        //}
 
-        public string GetAPIToken()
-        {
-            //return PinboardResponse.Result
-            throw new NotImplementedException();
-        }
+        //public string GetAPIToken()
+        //{
+        //    //return PinboardResponse.Result
+        //    throw new NotImplementedException();
+        //}
 
         /// <summary>
         /// Execute RestRequest, as suggested in the RestSharp documentation
@@ -233,15 +234,15 @@ namespace Pinboard
         /// <typeparam name="T">Type to return</typeparam>
         /// <param name="request">RestRequest</param>
         /// <returns>Response object of type T</returns>
-        private T Execute<T>(RestRequest request) where T : new()
+        private async Task<IRestResponse<T>> ExecuteAsync<T>(RestRequest request) where T : class
         {
             if (client == null)
             {
                 throw new NullReferenceException("Client didn't instantiate a RestClient");
             }
 
-            client.UserAgent = "SharpPinboard 0.04, voltagex@voltagex.org";
-            client.BaseUrl = url;
+            client.UserAgent = "SharpPinboard 0.05, voltagex@voltagex.org";
+            client.BaseUrl = new Uri(url);
 
             if (APIBaseURL.Contains("pinboard")) //should this be done differently?
             {
@@ -252,14 +253,14 @@ namespace Pinboard
                 client.Authenticator = new HttpBasicAuthenticator(username, token);
             }
 
-            IRestResponse<T> response = client.Execute<T>(request);
+            return await client.ExecuteTaskAsync<T>(request);
 
-            if (response.StatusCode != HttpStatusCode.OK || response.ErrorException != null)
-            {
-                throw new ApplicationException(response.StatusDescription != "OK" ? response.StatusDescription : response.ErrorMessage, response.ErrorException);
-            }
+            //if (response.StatusCode != HttpStatusCode.OK || response.ErrorException != null)
+            //{
+            //    throw new ApplicationException(response.StatusDescription != "OK" ? response.StatusDescription : response.ErrorMessage, response.ErrorException);
+            //}
 
-            return response.Data;
+            //await response.Data;
         }
     }
 }

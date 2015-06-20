@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using System.Configuration;
 using ServiceStack.Text;
+using System.Threading.Tasks;
 
 namespace Pinboard.Example
 {
@@ -71,8 +72,14 @@ namespace Pinboard.Example
                 try
                 {
                     var response = methods[methodNumber].Invoke(client, parameterArray.ToArray());
+                    if (((Task) response).IsFaulted)
+                    {
+                        Console.WriteLine("Fault!");
+                    }
+
                     response.PrintDump();
                 }
+
                 catch (TargetInvocationException e)
                 {
                     Console.WriteLine(e.InnerException.Message);

@@ -23,7 +23,7 @@ namespace Pinboard.Tests
             client.Setup(x => x.Execute<List<Post>>(It.IsAny<IRestRequest>()))
                 .Returns(new RestResponse<List<Post>> { StatusCode = HttpStatusCode.Unauthorized });
             Pinboard.API api = new API("", "", "", client.Object);
-            api.GetAllPosts();
+            api.GetAllPostsAsync();
         }
 
         [TestMethod]
