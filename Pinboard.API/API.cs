@@ -9,26 +9,19 @@ namespace Pinboard
 {
     public class Api
     {
-        private const string ApiBaseUrl = "https://api.pinboard.in/v1/";
+        private const string ApiBaseUrl = "http://api.pinboard.in/v1/";
         private static RestClient _client;
         private readonly string _token;
         private readonly string _url;
-        private readonly string _username;
 
         /// <summary>
         ///     Instantiates a new Pinboard API client
         /// </summary>
-        public Api(string token, string apiBaseUrl = ApiBaseUrl, string username = null, RestClient apiClient = null)
+        public Api(string token)
         {
-            _client = apiClient ?? new RestClient(apiBaseUrl);
-
             _token = token;
-            _url = apiBaseUrl;
-
-            if (!string.IsNullOrEmpty(username))
-            {
-                _username = username;
-            }
+            _url = ApiBaseUrl;
+            _client = new RestClient(_url);
         }
 
         /// <summary>
@@ -37,7 +30,8 @@ namespace Pinboard
         /// </summary>
         public async Task<IRestResponse<UpdateResponse>> GetLastUpdateAsync()
         {
-            var getUpdateRequest = new RestRequest("/posts/update");
+            const string resource = "/posts/update";
+            var getUpdateRequest = new RestRequest(resource);
             return await ExecuteAsync<UpdateResponse>(getUpdateRequest);
         }
 
@@ -47,22 +41,44 @@ namespace Pinboard
         public async Task<IRestResponse<PinboardResponse>> AddPostAsync(Post newPost)
         {
             var addPostRequest = new RestRequest("/posts/add");
+
             if (newPost.Href != null)
+            {
                 addPostRequest.AddParameter("url", newPost.Href);
+            }
             if (newPost.Description != null)
+            {
                 addPostRequest.AddParameter("description", newPost.Description);
+            }
             if (newPost.Extended != null)
+            {
                 addPostRequest.AddParameter("extended", newPost.Extended);
+            }
             if (newPost.Tag != null)
-                addPostRequest.AddParameter(ParameterHelpers.ValueToGetArgument("tags", newPost.Tag));
+            {
+                addPostRequest.AddParameter(
+                    ParameterHelpers.ValueToGetArgument("tags", newPost.Tag));
+            }
             if (newPost.CreationTime.HasValue)
-                addPostRequest.AddParameter(ParameterHelpers.ValueToGetArgument("dt", newPost.CreationTime));
+            {
+                addPostRequest.AddParameter(
+                    ParameterHelpers.ValueToGetArgument("dt", newPost.CreationTime));
+            }
             if (newPost.Replace != null)
-                addPostRequest.AddParameter(ParameterHelpers.ValueToGetArgument("replace", newPost.Replace));
+            {
+                addPostRequest.AddParameter(
+                    ParameterHelpers.ValueToGetArgument("replace", newPost.Replace));
+            }
             if (newPost.Shared != null)
-                addPostRequest.AddParameter(ParameterHelpers.ValueToGetArgument("shared", newPost.Shared));
+            {
+                addPostRequest.AddParameter(
+                    ParameterHelpers.ValueToGetArgument("shared", newPost.Shared));
+            }
             if (newPost.ToRead != null)
-                addPostRequest.AddParameter(ParameterHelpers.ValueToGetArgument("toread", newPost.ToRead));
+            {
+                addPostRequest.AddParameter(
+                    ParameterHelpers.ValueToGetArgument("toread", newPost.ToRead));
+            }
 
             return await ExecuteAsync<PinboardResponse>(addPostRequest);
         }
@@ -173,17 +189,10 @@ namespace Pinboard
                 throw new NullReferenceException("Client didn't instantiate a RestClient");
             }
 
-            _client.UserAgent = "SharpPinboard 0.05, voltagex@voltagex.org";
+            _client.UserAgent = 
+                "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.87 Safari/537.36";
             _client.BaseUrl = new Uri(_url);
-
-            if (ApiBaseUrl.Contains("pinboard"))
-            {
-                _client.Authenticator = new TokenAuthenticator(_token);
-            }
-            else
-            {
-                _client.Authenticator = new HttpBasicAuthenticator(_username, _token);
-            }
+            _client.Authenticator = new TokenAuthenticator(_token);
 
             return await _client.ExecuteTaskAsync<T>(request);
         }

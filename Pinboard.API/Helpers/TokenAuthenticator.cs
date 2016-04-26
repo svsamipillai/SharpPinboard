@@ -21,7 +21,7 @@ namespace Pinboard.Helpers
 
         public void Authenticate(IRestClient client, IRestRequest request)
         {
-            request.AddParameter("auth_token", _token);
+            request.AddQueryParameter("auth_token", _token);
         }
     }
 }

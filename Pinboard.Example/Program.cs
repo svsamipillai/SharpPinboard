@@ -10,39 +10,39 @@ namespace Pinboard.Example
 {
     internal class Program
     {
-        private static Api client;
+        private static Api _client;
 
         private static void Main(string[] args)
         {
-            string token = ConfigurationManager.AppSettings["token"];
-
-            if (string.IsNullOrEmpty(token) || token == "YOUR_API_KEY_HERE")
-            {
-                UpdateSettings();
-            }
-
-            token = ConfigurationManager.AppSettings["token"];
-            string url = ConfigurationManager.AppSettings["APIBaseURL"];
-            string username = ConfigurationManager.AppSettings["Username"];
-
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(url))
-            {
-                client = new Api(ConfigurationManager.AppSettings["token"]);
-            }
-            else
-            {
-                client = new Api(token, url, username);
-            }
+            var secret = ConfigurationManager.AppSettings["Secret"];
+            var username = ConfigurationManager.AppSettings["Username"];
+            _client = new Api($"{username}:{secret}");
 
             Console.WriteLine();
-            GetPinboardMethods();
+            PrintTags();
             Console.ReadLine();
+        }
+
+        private static async void PrintTags()
+        {
+            var tags = await _client.GetTags();
+
+            if (tags?.Data == null)
+            {
+                Console.WriteLine("Error!");
+                return;
+            }
+
+            foreach (var  item in tags.Data)
+            {
+                Console.WriteLine($"{item.Name}:{item.Count}");
+            }
         }
 
         private static void GetPinboardMethods()
         {
             var api = Assembly.GetAssembly(typeof(Api));
-            var mainType = api.GetType("Pinboard.API");
+            var mainType = api.GetType("Pinboard.Api");
             var methods = mainType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
 
             for (int i = 0; i < methods.Length; i++)
@@ -70,7 +70,7 @@ namespace Pinboard.Example
 
                 try
                 {
-                    var response = methods[methodNumber].Invoke(client, parameterArray.ToArray());
+                    var response = methods[methodNumber].Invoke(_client, parameterArray.ToArray());
                     if (((Task)response).IsFaulted)
                     {
                         Console.WriteLine("Fault!");
@@ -105,8 +105,7 @@ namespace Pinboard.Example
         private static void UpdateSettings(ConfigurationUserLevel configurationLevel = ConfigurationUserLevel.None)
         {
             bool needsUsername = false;
-            string username = string.Empty;
-            const string DeliciousAPI = "https://api.del.icio.us/v1/";
+            const string deliciousApi = "https://api.del.icio.us/v1/";
             Configuration config = ConfigurationManager.OpenExeConfiguration(configurationLevel);
             Console.WriteLine("Updating app.config at " + config.FilePath);
             Console.WriteLine("Use which site?");
@@ -121,7 +120,7 @@ namespace Pinboard.Example
                     break;
 
                 case "2":
-                    config.AppSettings.Settings.Add("APIBaseURL", DeliciousAPI);
+                    config.AppSettings.Settings.Add("APIBaseURL", deliciousApi);
                     needsUsername = true; //unlike Pinboard, Delicious uses a username:password pair.
                     break;
 
@@ -133,7 +132,7 @@ namespace Pinboard.Example
             if (needsUsername)
             {
                 Console.WriteLine("Please enter your username: ");
-                username = Console.ReadLine();
+                var username = Console.ReadLine();
                 config.AppSettings.Settings.Add("Username", username);
             }
 
