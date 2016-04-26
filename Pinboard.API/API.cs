@@ -1,9 +1,9 @@
-﻿using Pinboard.Helpers;
-using Pinboard.Types;
-using RestSharp;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Pinboard.Helpers;
+using Pinboard.Types;
+using RestSharp;
 
 namespace Pinboard
 {
@@ -14,9 +14,6 @@ namespace Pinboard
         private readonly string _token;
         private readonly string _url;
 
-        /// <summary>
-        ///     Instantiates a new Pinboard API client
-        /// </summary>
         public Api(string token)
         {
             _token = token;
@@ -24,10 +21,6 @@ namespace Pinboard
             _client = new RestClient(_url);
         }
 
-        /// <summary>
-        ///     Returns the most recent time a bookmark was added, updated or deleted.
-        ///     Use this before calling posts/all to see if the data has changed since the last fetch.
-        /// </summary>
         public async Task<IRestResponse<UpdateResponse>> GetLastUpdateAsync()
         {
             const string resource = "/posts/update";
@@ -35,9 +28,6 @@ namespace Pinboard
             return await ExecuteAsync<UpdateResponse>(getUpdateRequest);
         }
 
-        /// <summary>
-        ///     Adds a post based on the querystring we pass
-        /// </summary>
         public async Task<IRestResponse<PinboardResponse>> AddPostAsync(Post newPost)
         {
             var addPostRequest = new RestRequest("/posts/add");
@@ -83,9 +73,6 @@ namespace Pinboard
             return await ExecuteAsync<PinboardResponse>(addPostRequest);
         }
 
-        /// <summary>
-        ///     Delete a post via URL
-        /// </summary>
         public async Task<IRestResponse<PinboardResponse>> DeletePost(string url)
         {
             var deletePostRequest = new RestRequest("/posts/delete");
@@ -93,17 +80,11 @@ namespace Pinboard
             return await ExecuteAsync<PinboardResponse>(deletePostRequest);
         }
 
-        /// <summary>
-        ///     Delete a post
-        /// </summary>
         public async Task<IRestResponse<PinboardResponse>> DeletePostAsync(Post deletePost)
         {
             return await DeletePost(deletePost.Href);
         }
 
-        /// <summary>
-        ///     Get posts - filtered by URL, tags or date
-        /// </summary>
         public async Task<IRestResponse<List<Post>>> GetPostsAsync(List<Tag> tags = null, DateTime? createdDate = null,
             string url = null, bool changedMeta = false)
         {
@@ -120,12 +101,9 @@ namespace Pinboard
             return await ExecuteAsync<List<Post>>(getPostsReq);
         }
 
-        /// <summary>
-        ///     Gets most recent posts
-        /// </summary>
         public async Task<IRestResponse<List<Post>>> GetRecentPostsAsync(List<Tag> tags = null, int count = 15)
         {
-            var getPostsReq = new RestRequest("/posts/recent") { RequestFormat = DataFormat.Json };
+            var getPostsReq = new RestRequest("/posts/recent") {RequestFormat = DataFormat.Json};
 
             if (tags != null)
                 getPostsReq.AddParameter("Name", tags.ToString());
@@ -135,9 +113,6 @@ namespace Pinboard
             return await ExecuteAsync<List<Post>>(getPostsReq);
         }
 
-        /// <summary>
-        ///     Gets number of posts by date
-        /// </summary>
         public async Task<IRestResponse<List<DateResponse>>> GetPostDatesAsync(List<Tag> tags = null)
         {
             var getDatesReq = new RestRequest("/posts/dates");
@@ -148,13 +123,10 @@ namespace Pinboard
             return await ExecuteAsync<List<DateResponse>>(getDatesReq);
         }
 
-        /// <summary>
-        ///     Get all posts. This is rate-limited to once every 60 seconds and will return a 429 error if you exceed that
-        /// </summary>
         public async Task<IRestResponse<List<Post>>> GetAllPostsAsync(List<Tag> tags = null, int? start = null,
             int? results = null, DateTime? fromDate = null, DateTime? toDate = null, bool changedMeta = false)
         {
-            var getPostsReq = new RestRequest("/posts/all") { RequestFormat = DataFormat.Json };
+            var getPostsReq = new RestRequest("/posts/all") {RequestFormat = DataFormat.Json};
 
             if (tags != null)
                 getPostsReq.AddParameter(ParameterHelpers.ValueToGetArgument("Name", tags));
@@ -170,18 +142,12 @@ namespace Pinboard
             return await ExecuteAsync<List<Post>>(getPostsReq);
         }
 
-        /// <summary>
-        ///     Returns a full list of the user's tags along with the number of times they were used.
-        /// </summary>
         public async Task<IRestResponse<List<Tag>>> GetTags()
         {
             var getTagsRequest = new RestRequest("/tags/get");
             return await ExecuteAsync<List<Tag>>(getTagsRequest);
         }
 
-        /// <summary>
-        ///     Execute RestRequest, as suggested in the RestSharp documentation
-        /// </summary>
         private async Task<IRestResponse<T>> ExecuteAsync<T>(IRestRequest request) where T : class
         {
             if (_client == null)
@@ -189,8 +155,7 @@ namespace Pinboard
                 throw new NullReferenceException("Client didn't instantiate a RestClient");
             }
 
-            _client.UserAgent = 
-                "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.87 Safari/537.36";
+            _client.UserAgent = "Rest Sharp Client";
             _client.BaseUrl = new Uri(_url);
             _client.Authenticator = new TokenAuthenticator(_token);
 
