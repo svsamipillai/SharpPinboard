@@ -142,9 +142,11 @@ namespace Pinboard
             return await ExecuteAsync<List<Post>>(getPostsReq);
         }
 
-        public async Task<IRestResponse<List<Tag>>> GetTags()
+        public async Task<IRestResponse<List<Tag>>> GetTags(string format)
         {
             var getTagsRequest = new RestRequest("/tags/get");
+            getTagsRequest.AddHeader("Content-Type", "application/json");
+            getTagsRequest.AddQueryParameter("format", format);
             return await ExecuteAsync<List<Tag>>(getTagsRequest);
         }
 

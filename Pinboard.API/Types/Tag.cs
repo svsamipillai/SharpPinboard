@@ -1,18 +1,42 @@
-﻿namespace Pinboard.Types
+﻿using System.Collections.Generic;
+using System.Xml.Serialization;
+
+namespace Pinboard.Types
 {
     public class Tag
     {
-        public string Name { get; set; }
+        private string _tag;
 
-        public int? Count { get; set; }
-
-        public Tag(string name)
+        public Tag(string _tag)
         {
-            Name = name;
+            this._tag = _tag;
         }
 
+        /// <summary>
+        /// Needed for Xml Serialization
+        /// </summary>
         public Tag()
         {
         }
+
+        public string count { get; set; }
+        public string tag { get; set; }
     }
+
+    [XmlRoot(ElementName = "tag")]
+    public class XmlTag
+    {
+        [XmlAttribute(AttributeName = "count")]
+        public string Count { get; set; }
+        [XmlAttribute(AttributeName = "tag")]
+        public string Tag { get; set; }
+    }
+
+    [XmlRoot(ElementName = "tags")]
+    public class XmlTags
+    {
+        [XmlElement(ElementName = "tag")]
+        public List<XmlTag> Tag { get; set; }
+    }
+
 }

@@ -36,7 +36,7 @@ namespace Pinboard.Helpers
             }
             else if (value.GetType() == typeof (List<Tag>))
             {
-                parameter.Value = string.Join(" ", ((List<Tag>) value).Select(x => x.Name));
+                parameter.Value = string.Join(" ", ((List<Tag>) value).Select(x => x.tag));
             }
             else
             {
