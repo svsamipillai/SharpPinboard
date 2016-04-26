@@ -58,27 +58,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Tests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Pinboard.API\Pinboard.API.csproj">
+    <ProjectReference Include="..\Pinboard.API\Pinboard.csproj">
       <Project>{5ec003d5-f6f5-435d-9ee9-6f2e13645a0b}</Project>
-      <Name>Pinboard.API</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Pinboard.BookmarkFile\Pinboard.BookmarkFile.csproj">
-      <Project>{fdd813d0-4df7-4b11-8627-aa74e122adb1}</Project>
-      <Name>Pinboard.BookmarkFile</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Pinboard.Helpers\Pinboard.Helpers.csproj">
-      <Project>{fc15da86-812d-47bb-9fd2-113c9887ebe9}</Project>
-      <Name>Pinboard.Helpers</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Pinboard.Types\Pinboard.Types.csproj">
-      <Project>{c74c4723-82fd-478e-a54b-a6e0b0703870}</Project>
-      <Name>Pinboard.Types</Name>
+      <Name>Pinboard</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

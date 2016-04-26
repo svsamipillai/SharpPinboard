@@ -1,19 +1,19 @@
-﻿using System;
+﻿using ServiceStack.Text;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Reflection;
 using System.Text;
-using System.Configuration;
-using ServiceStack.Text;
 using System.Threading.Tasks;
 
 namespace Pinboard.Example
 {
     internal class Program
     {
-        private static API client;
+        private static Api client;
+
         private static void Main(string[] args)
         {
-
             string token = ConfigurationManager.AppSettings["token"];
 
             if (string.IsNullOrEmpty(token) || token == "YOUR_API_KEY_HERE")
@@ -27,12 +27,11 @@ namespace Pinboard.Example
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(url))
             {
-                client = new API(ConfigurationManager.AppSettings["token"]);
+                client = new Api(ConfigurationManager.AppSettings["token"]);
             }
-
             else
             {
-                client = new API(token, url, username);
+                client = new Api(token, url, username);
             }
 
             Console.WriteLine();
@@ -42,7 +41,7 @@ namespace Pinboard.Example
 
         private static void GetPinboardMethods()
         {
-            var api = Assembly.GetAssembly(typeof(API));
+            var api = Assembly.GetAssembly(typeof(Api));
             var mainType = api.GetType("Pinboard.API");
             var methods = mainType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
 
@@ -72,29 +71,24 @@ namespace Pinboard.Example
                 try
                 {
                     var response = methods[methodNumber].Invoke(client, parameterArray.ToArray());
-                    if (((Task) response).IsFaulted)
+                    if (((Task)response).IsFaulted)
                     {
                         Console.WriteLine("Fault!");
                     }
 
                     response.PrintDump();
                 }
-
                 catch (TargetInvocationException e)
                 {
                     Console.WriteLine(e.InnerException.Message);
                 }
-
             }
-
-
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 Console.WriteLine("Press any key to exit");
                 Console.ReadKey();
             }
-
         }
 
         private static string PrintParameters(ParameterInfo[] parameterInfo)
@@ -125,10 +119,12 @@ namespace Pinboard.Example
             {
                 case "1": //don't need to update the config
                     break;
+
                 case "2":
                     config.AppSettings.Settings.Add("APIBaseURL", DeliciousAPI);
                     needsUsername = true; //unlike Pinboard, Delicious uses a username:password pair.
                     break;
+
                 default:
                     Console.WriteLine("Invalid selection, using default (Pinboard)");
                     break;

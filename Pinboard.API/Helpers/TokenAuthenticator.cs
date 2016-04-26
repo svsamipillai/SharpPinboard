@@ -1,5 +1,6 @@
 ﻿using System;
 using RestSharp;
+
 namespace Pinboard.Helpers
 {
     /// <summary>
@@ -7,18 +8,20 @@ namespace Pinboard.Helpers
     /// </summary>
     public class TokenAuthenticator : IAuthenticator
     {
-        private string token;
-        public TokenAuthenticator(string Token)
+        private readonly string _token;
+
+        public TokenAuthenticator(string token)
         {
-            if (!Token.Contains(":"))
+            if (!token.Contains(":"))
             {
                 throw new ApplicationException("Pinboard tokens need to be in the form of username:token");
             }
-            token = Token;
+            _token = token;
         }
+
         public void Authenticate(IRestClient client, IRestRequest request)
         {
-            request.AddParameter("auth_token", token);
+            request.AddParameter("auth_token", _token);
         }
     }
 }

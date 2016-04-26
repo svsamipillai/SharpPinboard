@@ -72,13 +72,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Pinboard.API\Pinboard.API.csproj">
+    <ProjectReference Include="..\Pinboard.API\Pinboard.csproj">
       <Project>{5EC003D5-F6F5-435D-9EE9-6F2E13645A0B}</Project>
-      <Name>Pinboard.API</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Pinboard.Types\Pinboard.Types.csproj">
-      <Project>{C74C4723-82FD-478E-A54B-A6E0B0703870}</Project>
-      <Name>Pinboard.Types</Name>
+      <Name>Pinboard</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
